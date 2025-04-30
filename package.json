@@ -17,6 +17,8 @@
   },
   "homepage": "https://github.com/nin-faz/Project_RabbitMQ_nuccleaire#readme",
   "dependencies": {
-    "amqplib": "^0.10.7"
+    "amqplib": "^0.10.7",
+    "inquirer": "^8.2.6",
+    "project_rabbitmq_nuccleaire": "file:"
   }
 }
