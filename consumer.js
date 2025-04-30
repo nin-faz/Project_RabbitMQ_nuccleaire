@@ -1,36 +1,31 @@
 const amqplib = require('amqplib');
 
 const rabbitMQUrl = 'amqp://user:password@infoexpertise.hopto.org:5681';
-const exchange = 'NRJN_exchange';
-
-const arg = process.argv.slice(2);
-const routingKey = arg[0];
-
-let queue;
+const operations = ['sum', 'sub', 'mul', 'div'];
 
 async function consumeResult() {
     const connection = await amqplib.connect(rabbitMQUrl);
-
     const channel = await connection.createChannel();
 
-    await channel.assertExchange(exchange, 'topic', { durable: false });
+    for (const op of operations) {
+        const queueName = `NRJN_queue_result_${op}`;
+        await channel.assertQueue(queueName, { 
+            durable: false,
+        });
 
-    queue = await channel.assertQueue('', { durable: false, expires:  60000 });
-
-    process.on('SIGINT', async () => {
-        await channel.cancel(queue.queue)
-        await channel.deleteQueue(queue.queue);
-        process.exit(0);
-    })
-
-    await channel.bindQueue(queue.queue, exchange, routingKey);
-
-    channel.consume(queue.queue, (msg) => {
-        if (msg !== null) {
-            console.log(`Received message from ${routingKey}: ${msg.content.toString()}`);
+        channel.consume(queueName, msg => {
+            const content = JSON.parse(msg.content.toString());
+            const resultJson = {
+                a: content.a,
+                b: content.b,
+                result: content.result,
+                op: op
+            };
+            console.log(resultJson)
             channel.ack(msg);
-        }
-    });
+        });
+
+    }
 }
 
 consumeResult();
